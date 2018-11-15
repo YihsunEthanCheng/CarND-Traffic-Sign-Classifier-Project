@@ -57,7 +57,7 @@ class LeNet(object):
         self.one_hot_Y = tf.one_hot(self.Y, self.nCls)
         self.inference
         self.optimize
-        self.error
+        self.accuracy
 
     @define_scope(initializer=tf.global_variables_initializer())
     def inference(self):
@@ -118,7 +118,7 @@ class LeNet(object):
 # =============================================================================
     
     @define_scope
-    def error(self):
+    def accuracy(self):
         correct_prediction = tf.equal(tf.argmax(self.inference, 1), tf.argmax(self.one_hot_Y, 1))
         return tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 #        mistakes = tf.not_equal(
