@@ -49,7 +49,35 @@ params = {
 from modules.LeNet import LeNet
 import tensorflow as tf
 
-data = dataLoader()
+#def main():
+    
+data = dataLoader(params['BATCH_SIZE'])
+params['nCls'] = data.nCls
+params['imsize'] = data.imsize
 X = tf.placeholder(tf.float32, tuple([None] + params['imsize']))
 Y = tf.placeholder(tf.int32, (None, params['nCls']))
 model = LeNet(X, Y, params)
+
+image = tf.placeholder(tf.float32, [None, 784])self.x_train.shape[1:3]
+label = tf.placeholder(tf.float32, [None, 10])
+model = Model(X, Y)
+saver = tf.train.saver()
+ii = np.arange(len(data.y_train))
+valid_accuracy = [0]
+with tf.Session() as sess:
+    sess.run(tf.global_variables_initializer())
+    for ep in range(param['EPOCHS']):
+        np.random.shuffle(ii)
+        for offset in range(0, len(data.x_train), BATCH_SIZE):
+            jj = ii[offset:offset + BATCH_SIZE]
+            sess.run(model.optimize, {X: data.x_train[jj], Y: data.y_train[jj]})
+        valid_accuracy += [sess.run(model.error, {X: data.x_valid, Y: data.y_valid})]
+        print('Validation error {:6.2f}%'.format(100 * error))
+        if valid_accuracy[-1] > valid_accuracy[-2]:
+            saver.save(sess, 'checkpoints/lenet5')
+
+
+#if __name__ == '__main__':
+#    main()
+
+
