@@ -23,13 +23,15 @@ class dataLoader(object):
         self.x_train, self.y_train = train['features'], train['labels']
         self.x_valid, self.y_valid = valid['features'], valid['labels']
         self.x_test, self.y_test = test['features'], test['labels']
+        self.nCls = len(np.unique(self.y_train))
+        self.imsize = self.x_train.shape[1:3]
         self.dumpDataStats()
         
     def dumpDataStats(self):
         print("Number of training examples =", len(self.y_train))
         print("Number of testing examples =", len(self.y_test))
-        print("Image data shape =", self.x_train.shape[1:3])
-        print("Number of classes =", len(np.unique(self.y_train)))
+        print("Image data shape =", self.imsize)
+        print("Number of classes =", self.nCls )
         
     def viewSample(self, nPerCls = 20):
         canvas = []
@@ -50,8 +52,6 @@ class dataLoader(object):
         imgO = np.dstack(imgO)
         return 
             
-    
-    def enhance_color(img)
-        
+
         
         
