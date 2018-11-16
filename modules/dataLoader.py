@@ -24,7 +24,7 @@ class dataLoader(object):
         self.x_valid, self.y_valid = valid['features'], valid['labels']
         self.x_test, self.y_test = test['features'], test['labels']
         self.nCls = len(np.unique(self.y_train))
-        self.imsize = self.x_train.shape[1:3]
+        self.imsize = self.x_train.shape[1:]
         self.dumpDataStats()
         
     def dumpDataStats(self):
