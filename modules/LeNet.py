@@ -54,13 +54,14 @@ class LeNet(object):
         self.__dict__ = params.copy()
         self.X = tf.placeholder(tf.float32, (None,) + self.imsize)
         self.Y = tf.placeholder(tf.int32, (None))
+        self.prob_keep = tf.placeholder(tf.float32)
         self.one_hot_Y = tf.one_hot(self.Y, self.nCls)
         self.inference
         self.optimize
         self.accuracy
         self.saver = tf.train.Saver()
+        #Dropout
 
-        
     def train(self, data):
         ii = np.arange(len(data.y_train))
         self.valid_accuracy = []
@@ -71,21 +72,21 @@ class LeNet(object):
                 np.random.shuffle(ii)
                 for offset in range(0, len(data.x_train), self.BATCH_SIZE):
                     jj = ii[offset:offset + self.BATCH_SIZE]
-                    sess.run(self.optimize, {self.X: data.x_train[jj], self.Y: data.y_train[jj]})
-                    self.valid_accuracy += [sess.run(self.accuracy, {self.X: data.x_valid, self.Y: data.y_valid})]
+                    sess.run(self.optimize, {self.X: data.x_train[jj], self.Y: data.y_train[jj], self.prob_keep: self.keep_prob})
+                    self.valid_accuracy += [sess.run(self.accuracy, {self.X: data.x_valid, self.Y: data.y_valid, self.prob_keep: 1.0})]
                     print('Validation error {:6.2f}%'.format(100 * self.valid_accuracy[-1]))
                     if self.valid_accuracy[-1] > self.best_accuracy:
                         self.saver.save(sess, 'checkpoints/lenet5_64-32-256-256')
                         self.best_accuracy = self.valid_accuracy[-1]
                         print('best accuracy @ ep#{} = {}'.format(ep, self.best_accuracy))
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
-            self.test_accuracy = sess.run(self.accuracy, {self.X: data.x_test, self.Y: data.y_test})
+            self.test_accuracy = sess.run(self.accuracy, {self.X: data.x_test, self.Y: data.y_test, self.prob_keep: 1.0})
             print('Test accuracy : {}'.format(self.test_accuracy))
 
     def eval(self, x, y):
         with tf.Session() as sess:
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
-            accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y})
+            accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y, self.prob_keep: self.keep_prob})
             print("Accuracy = {:.3f}".format(accuracy))
         return accuracy
 
@@ -121,7 +122,8 @@ class LeNet(object):
         self.fc1_b = tf.Variable(tf.zeros(self.nFC1))
         fc1 = tf.matmul(fc0, self.fc1_W) + self.fc1_b
         fc1 = tf.nn.relu(fc1)       
- 
+        fc1 = tf.nn.dropout(fc1, self.prob_keep)
+
         # Layer 4: Fully Connected. Input = 120. Output = 84.
         self.fc2_W  = tf.Variable(tf.truncated_normal(shape=(self.nFC1, self.nFC2), mean = self.mu, stddev = self.sigma))
         self.fc2_b  = tf.Variable(tf.zeros(self.nFC2))
