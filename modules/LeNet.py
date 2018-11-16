@@ -50,14 +50,45 @@ def define_scope(function, scope=None, *args, **kwargs):
 
 class LeNet(object):
 
-    def __init__(self, X, Y, params):
+    def __init__(self, params):
         self.__dict__ = params.copy()
-        self.X = X
-        self.Y = Y
+        self.X = tf.placeholder(tf.float32, (None,) + self.imsize)
+        self.Y = tf.placeholder(tf.int32, (None))
         self.one_hot_Y = tf.one_hot(self.Y, self.nCls)
         self.inference
         self.optimize
         self.accuracy
+        self.saver = tf.train.Saver()
+
+        
+    def train(self, data):
+        ii = np.arange(len(data.y_train))
+        self.valid_accuracy = []
+        self.best_accuracy = 0
+        with tf.Session() as sess:
+            sess.run(tf.global_variables_initializer())
+            for ep in range(self.EPOCHS):
+                np.random.shuffle(ii)
+                for offset in range(0, len(data.x_train), self.BATCH_SIZE):
+                    jj = ii[offset:offset + self.BATCH_SIZE]
+                    sess.run(self.optimize, {self.X: data.x_train[jj], self.Y: data.y_train[jj]})
+                    self.valid_accuracy += [sess.run(self.accuracy, {self.X: data.x_valid, self.Y: data.y_valid})]
+                    print('Validation error {:6.2f}%'.format(100 * self.valid_accuracy[-1]))
+                    if self.valid_accuracy[-1] > self.best_accuracy:
+                        self.saver.save(sess, 'checkpoints/lenet5_64-32-256-256')
+                        self.best_accuracy = self.valid_accuracy[-1]
+                        print('best accuracy @ ep#{} = {}'.format(ep, self.best_accuracy))
+            self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
+            self.test_accuracy = sess.run(self.accuracy, {self.X: data.x_test, self.Y: data.y_test})
+            print('Test accuracy : {}'.format(self.test_accuracy))
+
+    def eval(self, x, y):
+        with tf.Session() as sess:
+            self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
+            accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y})
+            print("Accuracy = {:.3f}".format(accuracy))
+        return accuracy
+
 
     @define_scope(initializer=tf.global_variables_initializer())
     def inference(self):
