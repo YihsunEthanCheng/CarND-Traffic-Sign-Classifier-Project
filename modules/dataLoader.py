@@ -12,7 +12,7 @@ import skimage.transform as skt
 
 class dataLoader(object):
     
-    def __init__(self, path = 'data'):
+    def __init__(self, params, path = 'data'):
         try:
             train = pickle.load(open(path + '/train.p','rb'))
             test = pickle.load(open(path + '/test.p','rb'))
@@ -20,14 +20,15 @@ class dataLoader(object):
         except:
             raise ValueError('Data loading errors..')
             
+        self.nCls = len(np.unique(train['labels']))
+        self.imsize = train['features'].shape[1:]
+        params.update(self.__dict__)
         self.x_train, self.y_train = train['features'], train['labels']
         self.x_valid, self.y_valid = valid['features'], valid['labels']
         self.x_test, self.y_test = test['features'], test['labels']
-        self.nCls = len(np.unique(self.y_train))
-        self.imsize = self.x_train.shape[1:]
-        self.dumpDataStats()
+        self.showDataStats()
         
-    def dumpDataStats(self):
+    def showDataStats(self):
         print("Number of training examples =", len(self.y_train))
         print("Number of testing examples =", len(self.y_test))
         print("Image data shape =", self.imsize)
