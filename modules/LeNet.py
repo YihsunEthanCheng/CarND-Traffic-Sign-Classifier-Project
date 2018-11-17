@@ -86,7 +86,7 @@ class LeNet(object):
     def eval(self, x, y):
         with tf.Session() as sess:
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
-            accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y, self.prob_keep: self.keep_prob})
+            accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y, self.prob_keep: 1.0})
             print("Accuracy = {:.3f}".format(accuracy))
         return accuracy
 
