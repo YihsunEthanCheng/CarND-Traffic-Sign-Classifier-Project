@@ -111,7 +111,7 @@ class LeNet(object):
         self.conv1_b = tf.Variable(tf.zeros(self.c1['n']))
         conv1 = tf.nn.conv2d(self.X, self.conv1_W, strides = self.c1['strides'], padding='VALID') + self.conv1_b
         conv1 = tf.nn.relu(conv1)
-        conv1 = tf.layers.batch_normalization(conv1, training = self.is_training)
+#        conv1 = tf.layers.batch_normalization(conv1, training = self.is_training)
         conv1 = tf.nn.max_pool(conv1, ksize = self.c1['pool']['ksize'], strides = self.c1['pool']['strides'], padding='VALID')
         # Conv1 ouput dimensions
         self.size_c1 = ((np.array(self.imsize[:2]) - (np.array(self.c1['ksize'])-1))/np.array(self.c1['strides'][1:3])).astype(np.int32)
@@ -123,7 +123,7 @@ class LeNet(object):
         self.conv2_b = tf.Variable(tf.zeros(self.c2['n']))
         conv2 = tf.nn.conv2d(conv1, self.conv2_W, strides = self.c2['strides'], padding='VALID') + self.conv2_b
         conv2 = tf.nn.relu(conv2)
-        conv2 = tf.layers.batch_normalization(conv2, training = self.is_training)
+#        conv2 = tf.layers.batch_normalization(conv2, training = self.is_training)
         conv2 = tf.nn.max_pool(conv2, ksize= self.c2['pool']['ksize'], strides = self.c1['pool']['strides'], padding='VALID')
          # conv2 output dimensions
         self.size_c2 = ((self.size_p1 - (np.array(self.c2['ksize'])-1))/np.array(self.c2['strides'][1:3])).astype(np.int32)

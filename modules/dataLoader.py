@@ -93,8 +93,5 @@ class dataLoader(object):
         if isSingleImage:
             imo = imo[0]
         return imo, mu, sigma        
-        
-        
 
-        
         
