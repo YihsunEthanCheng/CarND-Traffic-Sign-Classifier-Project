@@ -54,6 +54,7 @@ class LeNet(object):
         self.__dict__ = params.copy()
         self.X = tf.placeholder(tf.float32, (None,) + self.imsize)
         self.Y = tf.placeholder(tf.int32, (None))
+        self.is_training = tf.placeholder(tf.bool)
         self.prob_keep = tf.placeholder(tf.float32)
         self.one_hot_Y = tf.one_hot(self.Y, self.nCls)
         self.inference
@@ -71,26 +72,37 @@ class LeNet(object):
             for ep in range(self.EPOCHS):
                 for jj in range(len(data.augIdx) // self.BATCH_SIZE):
                     x_batch, y_batch = data.nextBatch()
-                    sess.run(self.optimize, {self.X: x_batch, self.Y: y_batch, self.prob_keep: self.param_keep_prob})
-                self.valid_accuracy += [sess.run(self.accuracy, {self.X: data.x_valid, self.Y: data.y_valid, self.prob_keep: 1.0})]
+                    sess.run(self.optimize, {self.X: x_batch, self.Y: y_batch, 
+                        self.prob_keep: self.param_keep_prob, self.is_training: True})
+                self.valid_accuracy += [ 100.0*sess.run(self.accuracy, 
+                    {self.X: data.x_valid, self.Y: data.y_valid, 
+                     self.prob_keep: 1.0, self.is_training: False})]
+                
+                # evaluate epoch validation error
                 if self.valid_accuracy[-1] > self.best_accuracy:
                     self.saver.save(sess, 'checkpoints/lenet5_64-32-256-256')
                     self.best_accuracy = self.valid_accuracy[-1]
                     best_at = ep
                 print('Validation accuracy @ ep#{} {:6.2f}% best @ #{} = {:6.2f}'.
-                      format(ep, 100 * self.valid_accuracy[-1],best_at,self.best_accuracy))
+                      format(ep, self.valid_accuracy[-1],best_at,self.best_accuracy))
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
-            self.test_accuracy = sess.run(self.accuracy, {self.X: data.x_test, self.Y: data.y_test, self.prob_keep: 1.0})
+            self.test_accuracy = sess.run(self.accuracy, {self.X: data.x_test, 
+                self.Y: data.y_test, self.prob_keep: 1.0, self.is_training: False})
             print('Test accuracy : {}'.format(self.test_accuracy))
 
     def eval(self, x, y):
         with tf.Session() as sess:
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
-            accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y, self.prob_keep: 1.0})
+            accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y, 
+                self.prob_keep: 1.0, self.is_training: False})
             print("Accuracy = {:.3f}".format(accuracy))
         return accuracy
 
-
+    @define_scope(initializer=tf.global_variables_initializer())
+    def test(self, is_training = True, a = 100):
+        print(is_training)
+        return a
+    
     @define_scope(initializer=tf.global_variables_initializer())
     def inference(self):
         shape = self.c1['ksize'] + [self.imsize[2], self.c1['n']]
