@@ -63,22 +63,22 @@ class LeNet(object):
         #Dropout
 
     def train(self, data):
-        ii = np.arange(len(data.y_train))
         self.valid_accuracy = []
         self.best_accuracy = 0
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
+            best_at = 0
             for ep in range(self.EPOCHS):
-                np.random.shuffle(ii)
-                for offset in range(0, len(data.x_train), self.BATCH_SIZE):
-                    jj = ii[offset:offset + self.BATCH_SIZE]
-                    sess.run(self.optimize, {self.X: data.x_train[jj], self.Y: data.y_train[jj], self.prob_keep: self.keep_prob})
-                    self.valid_accuracy += [sess.run(self.accuracy, {self.X: data.x_valid, self.Y: data.y_valid, self.prob_keep: 1.0})]
-                    print('Validation error {:6.2f}%'.format(100 * self.valid_accuracy[-1]))
-                    if self.valid_accuracy[-1] > self.best_accuracy:
-                        self.saver.save(sess, 'checkpoints/lenet5_64-32-256-256')
-                        self.best_accuracy = self.valid_accuracy[-1]
-                        print('best accuracy @ ep#{} = {}'.format(ep, self.best_accuracy))
+                for jj in range(len(data.augIdx) // self.BATCH_SIZE):
+                    x_batch, y_batch = data.nextBatch()
+                    sess.run(self.optimize, {self.X: x_batch, self.Y: y_batch, self.prob_keep: self.param_keep_prob})
+                self.valid_accuracy += [sess.run(self.accuracy, {self.X: data.x_valid, self.Y: data.y_valid, self.prob_keep: 1.0})]
+                if self.valid_accuracy[-1] > self.best_accuracy:
+                    self.saver.save(sess, 'checkpoints/lenet5_64-32-256-256')
+                    self.best_accuracy = self.valid_accuracy[-1]
+                    best_at = ep
+                print('Validation accuracy @ ep#{} {:6.2f}% best @ #{} = {:6.2f}'.
+                      format(ep, 100 * self.valid_accuracy[-1],best_at,self.best_accuracy))
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
             self.test_accuracy = sess.run(self.accuracy, {self.X: data.x_test, self.Y: data.y_test, self.prob_keep: 1.0})
             print('Test accuracy : {}'.format(self.test_accuracy))
