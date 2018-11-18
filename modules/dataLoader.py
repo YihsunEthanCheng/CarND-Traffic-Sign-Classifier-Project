@@ -9,7 +9,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import skimage.transform as skt
-
+from skimage import color, exposure, transform
 
 class dataLoader(object):
     
@@ -26,16 +26,19 @@ class dataLoader(object):
         self.nCls = len(np.unique(train['labels']))
         self.imsize = train['features'].shape[1:]
         params.update(self.__dict__)
-        
-        # rename dataset
-        self.x_train, self.y_train = train['features'], train['labels']
-        self.x_valid, self.y_valid = valid['features'], valid['labels']
-        self.x_test,  self.y_test  = test['features'],  test['labels']
+       
+        # data stats
+        self.y_train, self.y_valid, self.y_test = train['labels'], valid['labels'], test['labels']
         self.labs = np.unique(self.y_valid)
         self.nPerCls = [ np.sum(self.y_train == lab) for lab in self.labs]
         self.maxN =  np.max(self.nPerCls)
+
+        # process image
+        self.x_train, self.mu_train, self.sigma_train = self.processImage(train['features'])
+        self.x_valid, _ , _ = self.processImage(valid['features'], self.mu_train, self.sigma_train)
+        self.x_test,  _ , _ = self.processImage(test['features'],  self.mu_train, self.sigma_train) 
         
-        # create lookup table for random sampling for batch training
+        # create lookup table for random sampling for training batch
         augIdx = []
         for lab in self.labs:
             idx_i = np.where(self.y_train == lab)[0] 
@@ -63,24 +66,35 @@ class dataLoader(object):
         print("num of Training patterns", self.nPerCls)
         
     def viewSample(self, nPerCls = 20):
-        canvas = []
-        labels = np.unique(self.y_train)
-        idx = np.vstack([np.where(self.y_train == lab_i)[0][:nPerCls] for lab_i in labels])
-        canvas = np.vstack([np.hstack([ self.x_train[i] for i in row]) for row in idx])
-        return canvas
+        mosaic = []
+        idx = np.vstack([np.where(self.y_train == lab_i)[0][:nPerCls] for lab_i in self.labs])
+        mosaic = np.vstack([np.hstack([ self.x_train[i] for i in row]) for row in idx])
+        if mosaic.dtype != np.uint8:
+            L, H = np.min(mosaic), np.max(mosaic)
+            mosaic = (mosaic - L) / (H - L )
+        plt.imshow(mosaic)
+        return mosaic
             
- #%%           
-    def enhance_contrast(img, tail = 0.005):    
-        img.astype(np.float)
-        imgO=[]
-        for ii in range(img.shape[-1]):
-            ch_sort = np.sort(img[:,:,ii], axis = None)
-            jth = int(len(ch_sort)*tail)
-            L, H = ch_sort[jth], ch_sort[-jth]
-            imgO += [255.*(img[:,:,ii] - L)/(H-L)]
-        imgO = np.dstack(imgO)
-        return 
-            
+    def processImage(self, img, mu = None, sigma = None):
+        isSingleImage = False
+        if len(img.shape) == 3:
+            img = [img]
+            isSingleImage = True
+        imo = []
+        for ii, imi in enumerate(img):
+            hsv = color.rgb2hsv(imi)
+            hsv[:, :, 2] = exposure.equalize_hist(hsv[:, :, 2])
+            imo += [color.hsv2rgb(hsv)]
+        imo = np.array(imo)
+        if mu is None or sigma is None:    
+            mu = np.mean(imo)
+            sigma = np.std(imo)
+        imo = (imo-mu)/sigma
+        if isSingleImage:
+            imo = imo[0]
+        return imo, mu, sigma        
+        
+        
 
         
         
