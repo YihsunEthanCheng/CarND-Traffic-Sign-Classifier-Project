@@ -8,9 +8,29 @@ Created on Sat Nov 10 13:20:29 2018
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage import color, exposure, transform
+from skimage import color, exposure, transform, util, filters
 
-class dataLoader(object):
+noise = lambda span: 2*(np.random.rand()-0.5)*span
+    
+def tileForShow(img):
+    mosaic = []
+    n = int(np.sqrt(len(img)))
+    row = []
+    for ii, im in enumerate(img):
+        row += [im]
+        if (ii+1)%n == 0:
+            mosaic += [np.hstack(row)]
+            row = []
+    mosaic = np.vstack(mosaic)    
+    return mosaic    
+
+def scaleForShow(img):    
+    L, H = np.min(img), np.max(img)
+    img = (img - L) / (H - L )
+    return img
+
+
+class TrafficSignData(object):
     
     def __init__(self, params, path = 'data'):
         try:
@@ -20,16 +40,14 @@ class dataLoader(object):
         except:
             raise ValueError('Data loading errors..')
         
-        # update params with data spec
+        # export params 
         self.BATCH_SIZE = params['BATCH_SIZE'] 
         self.nCls = len(np.unique(train['labels']))
         self.imsize = train['features'].shape[1:]
         params.update(self.__dict__)
         
         # import params
-        self.rotate_range = params['rotate_range']
-        self.translate_range = params['translate_range']
-        self.scaling_range = params['scaling_range']
+        self.__dict__.update(params['augment'])
         
         # data stats
         self.y_train, self.y_valid, self.y_test = train['labels'], valid['labels'], test['labels']
@@ -60,8 +78,11 @@ class dataLoader(object):
         self.augiNext =  (self.augiNext + self.BATCH_SIZE) % len(self.augIdx)
         if self.augiNext < self.BATCH_SIZE:
             np.random.shuffle(self.augIdx)
-        return self.x_train[ii], self.y_train[ii]
-        
+        if np.random.rand() < self.augment['warpFreq']: 
+            return self.warpImage(self.x_train[ii]), self.y_train[ii]
+        else:
+            return self.x_train[ii], self.y_train[ii]
+
     def showDataStats(self):
         print("Number of training examples =", len(self.y_train))
         print("Number of testing examples =", len(self.y_test))
@@ -73,7 +94,7 @@ class dataLoader(object):
         mosaic = []
         idx = np.vstack([np.where(self.y_train == lab_i)[0][:nPerCls] for lab_i in self.labs])
         mosaic = np.vstack([np.hstack([ self.x_train[i] for i in row]) for row in idx])
-        self.imshow(mosaic)
+        plt.imshow(scaleForShow(mosaic))
         return mosaic
             
     def processImage(self, img, mu = None, sigma = None):
@@ -95,32 +116,81 @@ class dataLoader(object):
             imo = imo[0]
         return imo, mu, sigma        
 
+
     def warpImage(self, img):
-        imo = []
-        for i, im in enumerate(img):
-            # add rotation
-            imo += [transform.rotate(im, np.random.rand(1)[0]*(self.rotate_range[1] - self.rotate_range[0])+self.rotate_range[0])]
-            # add translation
+        for ii in range(len(img)):
             # add scaling
+            im1 = transform.rescale(img[ii], 1+noise(self.scale), 
+                multichannel = True, anti_aliasing = True, mode = 'reflect')
+            # padding to get smae size
+            pw = (np.array(self.imsize[:2]) + self.translate*2 - np.array(im1.shape[:2])+1)//2
+            im1 = util.pad(im1,(tuple([pw[0]]*2), tuple([pw[1]]*2), (0,0)), mode = 'constant', constant_values = 0)
+            # add rotation
+            im1 = transform.rotate(im1,noise(self.rotate))
             # add bluring
+            im1 = filters.gaussian(im1, np.random.rand()*self.Gaussian_blur,  multichannel = True)
             # add gaussian noise
+            im1 = im1 + np.random.randn(im1.shape[0],im1.shape[1], im1.shape[2]) * self.Gaussian_speckle
             # cropping
-        return imo
+            LT = np.int_([noise(self.translate), noise(self.translate)]) + self.translate
+            img[ii] = im1[LT[0]:(LT[0]+self.imsize[0]), LT[1]:(LT[1]+self.imsize[1]), :]
+        return img    
     
-    def imshow(self, img, tileForShow = False):
-        if tileForShow:
-            mosaic = []
-            n = int(np.sqrt(len(img)))
-            row = []
-            for ii, im in enumerate(img):
-                row += [im]
-                if (ii+1)%n == 0:
-                    mosaic += [np.hstack(row)]
-                    row = []
-            mosaic = np.vstack(row)
-        else: 
-            mosaic = img
-        if mosaic.dtype != np.uint8:
-            L, H = np.min(mosaic), np.max(mosaic)
-            mosaic = (mosaic - L) / (H - L )
-        plt.imshow(mosaic)
+#%%
+
+
+#%%    
+        
+def warpImageShow(im, augment):
+
+    fig, axes = plt.subplots(4,2)
+    ax = axes.T.flatten()
+    # original
+    i = 0
+    ax[i].imshow(scaleForShow(im))
+    ax[i].set_title('{}. Ogional'.format(i))
+    i+=1
+    # add scaling
+    scale = 1.2 #1+noise(augment['scale'])
+    im1 = transform.rescale(im, scale, 
+            multichannel = True, anti_aliasing = True, mode = 'reflect')
+    ax[i].imshow(scaleForShow(im1))
+    ax[i].set_title('{}. Scaled {:3.2f}X'.format(i, scale))
+    i+=1
+    # padding to get smae size
+    pw = (np.array(im.shape[:2]) + augment['translate']*2 - np.array(im1.shape[:2])+1)//2
+    im2 = util.pad(im1,(tuple([pw[0]]*2), tuple([pw[1]]*2), (0,0)), mode = 'constant', constant_values = 0)
+    ax[i].imshow(scaleForShow(im2))
+    ax[i].set_title('{}. Padded'.format(i))
+    i+=1
+    # add rotation
+    deg = 8.5 #noise(augment['rotate'])
+    im3 = transform.rotate(im2,deg)
+    ax[i].imshow(scaleForShow(im3))       
+    ax[i].set_title('{}. Roatated by {:3.2f} degree'.format(i, deg))
+    i+=1
+    # add bluring
+    sigma = np.random.rand()*augment['Gaussian_blur']
+    im4 = filters.gaussian(im3, sigma, multichannel = True)
+    ax[i].imshow(scaleForShow(im4))       
+    ax[i].set_title('{}. Gaussian Blured, sigma = {:3.2f}'.format(i, sigma))
+    i+=1
+    # add gaussian noise
+    a,b,c = im4.shape
+    im5 = im4 + np.random.randn(a,b,c) * augment['Gaussian_speckle']
+    ax[i].imshow(scaleForShow(im5))       
+    ax[i].set_title('{}. Gaussian \"Sprinkle\" Noise, sigma = {:3.2f}'.format(i, augment['Gaussian_speckle']))
+    i+=1
+    # cropping
+    LT = np.int_([noise(augment['translate']), noise(augment['translate'])]) + augment['translate']
+    im6 = im5[LT[0]:(LT[0]+im.shape[0]), LT[1]:(LT[1]+im.shape[1]), :]
+    ax[i].imshow(scaleForShow(im6))       
+    ax[i].set_title('{}. Translated (Cropped) by {} pixels'.format(i, LT - augment['translate']))   
+    i+=1
+    ax[i].axis('off')
+    margin = 0.02
+    plt.subplots_adjust(margin, margin*2, 1-margin, 1- margin*2, wspace = margin)
+    fig.set_figheight(15.5)
+    fig.set_figwidth(9)
+    
+
