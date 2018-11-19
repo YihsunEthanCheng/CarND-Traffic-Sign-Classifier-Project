@@ -67,6 +67,7 @@ class LeNet(object):
     def train(self, data):
         self.valid_accuracy = []
         self.best_accuracy = 0
+        logFn = 'checkpoints/lenet5_' + strftime("%m%d%H%M%S", gmtime())
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             best_at = 0
@@ -81,7 +82,7 @@ class LeNet(object):
                 
                 # evaluate epoch validation error
                 if self.valid_accuracy[-1] > self.best_accuracy:
-                    self.saver.save(sess, 'checkpoints/lenet5_{}'.format(strftime("%m%d%H%M%S", gmtime())))
+                    self.saver.save(sess, logFn)
                     self.best_accuracy = self.valid_accuracy[-1]
                     best_at = ep
                 print('Validation accuracy @ ep#{} {:6.2f}% best @ #{} = {:6.2f}'.
