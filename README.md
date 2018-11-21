@@ -1,6 +1,6 @@
 # **Traffic Sign Recognition** 
 
----
+___
 
 ## Outlines ##
 
@@ -25,8 +25,9 @@ ___
 [image8]: ./examples/data_overview_processed.png "processed"
 [image9]: ./examples/augmentation_example_1.png "augmentation example1"
 [image10]: ./examples/augmentation_example_2.png "augmentation example2"
+[image11]: ./checkpoints/lenet5_1120165543_training_curve.png "training curve"
 
----
+___
 
 ## Dataset overview
 
@@ -140,8 +141,32 @@ ___
 
 ___
 ## Training 
+* Training is done within 1000 epochs with the validation accuracy recorded during the training and weights stored when there is a validation accuracy makes or equals to the new high.
 
+ ![Alt text][image11]
 
+test_accuracy = model.eval(data.x_test, data.y_test)
+INFO:tensorflow:Restoring parameters from checkpoints/lenet5_1120165543
+Accuracy = 0.973
+
+valid_accuracy = model.eval(data.x_valid, data.y_valid)
+INFO:tensorflow:Restoring parameters from checkpoints/lenet5_1120165543
+Accuracy = 0.989
+
+train_accuracy
+Out[100]: 
+array([1.        , 0.9979798 , 0.99900496, 0.99841267, 0.9983051 ,
+       0.99030304, 1.        , 0.996124  , 1.        , 1.        ,
+       1.        , 1.        , 1.        , 1.        , 1.        ,
+       1.        , 1.        , 1.        , 1.        , 1.        ,
+       1.        , 1.        , 1.        , 1.        , 1.        ,
+       1.        , 1.        , 1.        , 1.        , 1.        ,
+       1.        , 1.        , 1.        , 1.        , 1.        ,
+       1.        , 1.        , 1.        , 1.        , 1.        ,
+       1.        , 1.        , 1.        ], dtype=float32)
+
+tot_train_accuracy
+Out[101]: 0.9990804328867483
 ___
 ## Testing on novel data
 
