@@ -69,7 +69,7 @@ ___
 ---
 ## Image Processing Pipeline
 
-This image processing module resides in the class "[TrafficSignData]([./modules/dataLoader.py)" located in the modules folder. The module consists of three components to process each raw images.
+This image processing module resides in the class "[TrafficSignData](./modules/dataLoader.py)" located in the modules folder. The module consists of three components to process each raw images.
 
 * **Size normalization**
 
@@ -119,7 +119,7 @@ ___
 | ![Alt text][image9] | ![Alt text][image10] |
 ___
 ## Neural network model
-* LeNet-5 is selected for this task with the following specifications. The implementation is encapsulated in the class [LeNet](modules/Lenet.py).
+* LeNet-5 is selected for this task with the following specifications. The implementation is encapsulated in the class [LeNet](./modules/Lenet.py).
 
 | Layers / Parameters  	|     Descriptions	        		|
 |:---------------------:|:---------------------------------------------:|
