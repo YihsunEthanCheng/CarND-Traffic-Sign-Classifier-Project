@@ -11,7 +11,7 @@
 * Training 
 * Testing on novel data
 * Summary
-
+___
 
 [//]: # "Image References"
 
@@ -25,6 +25,7 @@
 [image8]: ./examples/data_overview_processed.png "processed"
 [image9]: ./examples/augmentation_example_1.png "augmentation example1"
 [image10]: ./examples/augmentation_example_2.png "augmentation example2"
+
 ---
 
 ## Dataset overview
