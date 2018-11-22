@@ -26,6 +26,17 @@ ___
 [image9]: ./examples/augmentation_example_1.png "augmentation example1"
 [image10]: ./examples/augmentation_example_2.png "augmentation example2"
 [image11]: ./checkpoints/lenet5_1120165543_training_curve.png "training curve"
+[image12]: ./checkpoints/lenet5_1120165543_Recognition_Accuracy_Per_Class.png "Accuracy Per Class"
+[image13]: ./checkpoints/lenet5_1120165543_n_vs_recog_rate.png "N vs Accuracy"
+[image14]: ./examples/100_1607_small.jpg "download_0"
+[image15]: ./examples/Stop_sign_small.jpg "download_1"
+[image16]: ./examples/Arterial_small1.jpg "download_2"
+[image17]: ./examples/Radfahrer_Absteigen_small.jpg "download_3"
+[image18]: ./examples/Do-Not-Enter_small.jpg "download_4"
+[image19]: ./examples/speed_30.jpg "download_5"
+[image20]: ./examples/no_passing.jpg "download_6"
+[image21]: ./examples/Share-Path-1_small.jpg "download_7"
+[image22]: ./examples/Bike-Path-Ends_small.jpg "download_8"
 
 ___
 
@@ -35,15 +46,15 @@ ___
 
 * Dataset statistics
 
-|     Data Specification      | Training set |
-| :-------------------------: | :----------: |
-|         Image type          |     RGB      |
-|         Image size          |    Varies    |
-|       Number of Class       |      43      |
-|  Number of training images  |    34799     |
-|  Number of testing images   |    12630     |
-| Number of validation images |     4410     |
-| Names of Traffic signs | [signnames.csv](./signnames.csv)|
+  |     Data Specification      | Training set |
+  | :-------------------------: | :----------: |
+  |         Image type          |     RGB      |
+  |         Image size          |    Varies    |
+  |       Number of Class       |      43      |
+  |  Number of training images  |    34799     |
+  |  Number of testing images   |    12630     |
+  | Number of validation images |     4410     |
+  | Names of Traffic signs      | [signnames.csv](./signnames.csv)|
 
 
 * Samples of images from the data set
@@ -52,19 +63,19 @@ ___
 
   * ROI are annotated in a csv file
 
-| Traffic sign images | Traffic sign name |
-| :-------------------:|:-----------------:|
-| ![Alt text][image2] | Speed limit (100km/h)|
-| ![Alt text][image3] |No passing|
-| ![Alt text][image4] | Ahead only|
-| ![Alt text][image5] | Stop|
-| ![Alt text][image6] | Children crossing|
+  | Traffic sign images  | Traffic sign name |
+  | :-------------------:|:-----------------:|
+  | ![Alt text][image2]  | Speed limit (100km/h)|
+  | ![Alt text][image3]  |No passing        |
+  | ![Alt text][image4]  | Ahead only       |
+  | ![Alt text][image5]  | Stop             |
+  | ![Alt text][image6]  | Children crossing|
 
 * Uneven population from each class
   * To avoid training favoring populated classes, a list of image index are created as a proxy to equalize the number of training for each class (with random repetitions in less populated class).
   * Validation and testing sets are kept as-is, no equalization in testing/validation frequency per class
 
-![example #1][image1]
+    ![example #1][image1]
 
 ---
 ## Image Processing Pipeline
@@ -121,109 +132,112 @@ ___
 ## Neural network model
 * LeNet-5 is selected for this task with the following specifications. The implementation is encapsulated in the class [LeNet](./modules/Lenet.py).
 
-| Layers / Parameters  	|     Descriptions	        		|
-|:---------------------:|:---------------------------------------------:|
-| Input        		| 32x32x3 RGB image   				|
-| Convolution 5x5x64  	| 1x1 stride, valid padding, outputs 28x28x64 	|
-| RELU			|						|
-| Max pooling	      	| 2x2 stride, outputs 14x14x64	 		|
-| Convolution 5x5x128  	| 1x1 stride, valid padding, outputs 10x10x64 	|
-| RELU			|						|
-| Max pooling	      	| 2x2 stride, outputs 5x5x128	 		|
-| Dropout		| Keep rate = 0.5				|
-| Fully connected	| 512 						|
-| Dropout		| Keep rate = 0.5				|
-| Fully connected	| 256						|
-| Dropout		| Keep rate = 0.5				|
-| Softmax		|        					|
-| Optimizer             | Adaptive moment estimation 			|
-| Learning rate 	| 0.001						|
+  | Layers / Parameters   |      Descriptions	                          |
+  |:---------------------:|:---------------------------------------------:|
+  | Input           	     | 32x32x3 RGB image   			                 |
+  | Convolution 5x5x64    | 1x1 stride, valid padding, outputs 28x28x64   |
+  | RELU			           |						                             |
+  | Max pooling	        | 2x2 stride, outputs 14x14x64	 		           |
+  | Convolution 5x5x128   | 1x1 stride, valid padding, outputs 10x10x64   |
+  | RELU			           |						                             |
+  | Max pooling	        | 2x2 stride, outputs 5x5x128	 		           |
+  | Dropout		           | Keep rate = 0.5				                    |
+  | Fully connected	     | 512 						                          |
+  | Dropout		           | Keep rate = 0.5                   				  |
+  | Fully connected	     | 256						                          |
+  | Dropout		           | Keep rate = 0.5				                    |
+  | Softmax		           |        					                          |
+  | Optimizer             | Adaptive moment estimation 			           |
+  | Learning rate      	  | 0.001						                       |
 
 ___
 ## Training 
-* Training is done within 1000 epochs with the validation accuracy recorded during the training and weights stored when there is a validation accuracy makes or equals to the new high.
+* Training progressed is monitored by validation accuracy as show below. The weights are saved into and overwrote the same checkpoint filename everytime the validation makes a new high. According to plot, the net is very well trainined at around 300 epochs.
 
- ![Alt text][image11]
+    ![Alt text][image11]
 
-test_accuracy = model.eval(data.x_test, data.y_test)
-INFO:tensorflow:Restoring parameters from checkpoints/lenet5_1120165543
-Accuracy = 0.973
+* Recognition accuracy
+   * The high training accuracy across all class suggests that the current design have been fully trained. Not much to gain should training continue.
 
-valid_accuracy = model.eval(data.x_valid, data.y_valid)
-INFO:tensorflow:Restoring parameters from checkpoints/lenet5_1120165543
-Accuracy = 0.989
+  |  Data Set | Overall Weigthed Accuracy |
+  |:--------------:|:-----------------:|
+  | Training set   | 0.9990804328867483 |
+  | Validation set | 0.9886621236801147 |
+  | Testing set    | 0.9725257158279419 |
 
-train_accuracy
-Out[100]: 
-array([1.        , 0.9979798 , 0.99900496, 0.99841267, 0.9983051 ,
-       0.99030304, 1.        , 0.996124  , 1.        , 1.        ,
-       1.        , 1.        , 1.        , 1.        , 1.        ,
-       1.        , 1.        , 1.        , 1.        , 1.        ,
-       1.        , 1.        , 1.        , 1.        , 1.        ,
-       1.        , 1.        , 1.        , 1.        , 1.        ,
-       1.        , 1.        , 1.        , 1.        , 1.        ,
-       1.        , 1.        , 1.        , 1.        , 1.        ,
-       1.        , 1.        , 1.        ], dtype=float32)
+* Recognition accuracy per class
+  * The closer look at recognition accuracy on each class reveals uneven performance among them as shown below.
 
-tot_train_accuracy
-Out[101]: 0.9990804328867483
+    ![Alt text][image12]
+
+  * A quick check on plot below shows that the poor accuracy are likely related to poor repreesentation of the training set in those classes.
+   
+    ![Alt text][image13]
+
+  * Those classes performed poorly are for sure having fewer training data. But those mall classes are not necessarily perform poorly. This suggests the augmentation scheme may have missing some perturbation models to cover the different data variation in the test set.
 ___
 ## Testing on novel data
+
+  * Gernman traffic sign images are found on [German Bicycle Laws website](http://bicyclegermany.com/german_bicycle_laws.html) from search engines.
+
+  * Below are recognition results for the 7 signs belonged to the list of training data with all of them getting recognized correctly.
+
+  | Known Signs|Top 5 Predictions |probability	|
+  |:----------:|-------------|:--------------:|
+  |![alt text][image14]| Right-of-way at the next intersection | 0.9826 |
+  ||Beware of ice/snow | 0.0173 |
+  || Children crossing | 0.0000 |
+  || Road work | 0.0000 |
+  || Dangerous curve to the right | 0.0000 |
+  |![alt text][image15]| Stop | 0.9999 |
+  || Bicycles crossing | 0.0001 |
+  || Speed limit (30km/h) | 0.0000 |
+  || Road work | 0.0000 |
+  || Speed limit (60km/h) | 0.0000 |
+  |![alt text][image16]| Priority road | 1.0000 |
+  || End of no passing by vehicles over 3.5 metric tons | 0.0000 |
+  || No passing for vehicles over 3.5 metric tons | 0.0000 |
+  || General caution | 0.0000 |
+  || No entry | 0.0000 |
+  |![alt text][image17]| No passing | 0.5149 |
+  || General caution | 0.1520 |
+  || Bicycles crossing | 0.1268 |
+  || Children crossing | 0.0910 |
+  || Dangerous curve to the right | 0.0449 |
+  |![alt text][image18]| No entry | 1.0000 |
+  || Stop | 0.0000 |
+  || End of no passing by vehicles over 3.5 metric tons | 0.0000 |
+  || No passing for vehicles over 3.5 metric tons | 0.0000 |
+  || General caution | 0.0000 |
+  |![alt text][image19]| Speed limit (30km/h) | 1.0000 |
+  || Speed limit (100km/h) | 0.0000 |
+  || Speed limit (50km/h) | 0.0000 |
+  || Speed limit (80km/h) | 0.0000 |
+  || Speed limit (20km/h) | 0.0000 |
+  |![alt text][image20]| No passing | 1.0000 |
+  || No passing for vehicles over 3.5 metric tons | 0.0000 |
+  || Vehicles over 3.5 metric tons prohibited | 0.0000 |
+  || No vehicles | 0.0000 |
+  || Speed limit (60km/h) | 0.0000 |
+
+ * Below are 2 signs that were not seen in the data sets for training. The top predictions below are mostly in the same category of signs with round shape and blue color.
+
+  | Unknown Signs | Top 5 Predictions |  probability	|
+  |:-----------:|---------------|---------------------|
+  |![alt text][image21]| Dangerous curve to the right | 0.8542 |
+  || Go straight or left | 0.1315 |
+  || Roundabout mandatory | 0.0086 |
+  || Ahead only | 0.0027 |
+  || Right-of-way at the next intersection | 0.0010 |
+  |![alt text][image22]| Turn left ahead | 0.6002 |
+  || Ahead only | 0.2458 |
+  || Turn right ahead | 0.0622 |
+  || Roundabout mandatory | 0.0454 |
+  || Go straight or right | 0.0182 |
 
 ___
 ## Summary
 
 
-
-
-
-
-
-
-### Test a Model on New Images
-
-#### 1. Choose five German traffic signs found on the web and provide them in the report. For each image, discuss what quality or qualities might be difficult to classify.
-
-Here are five German traffic signs that I found on the web:
-
-![alt text][image4] ![alt text][image5] ![alt text][image6] 
-![alt text][image7] ![alt text][image8]
-
-The first image might be difficult to classify because ...
-
-#### 2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
-
-Here are the results of the prediction:
-
-| Image			        |     Prediction	        					|
-|:---------------------:|:---------------------------------------------:|
-| Stop Sign      		| Stop sign   									|
-| U-turn     			| U-turn 										|
-| Yield					| Yield											|
-| 100 km/h	      		| Bumpy Road					 				|
-| Slippery Road			| Slippery Road      							|
-
-
-The model was able to correctly guess 4 of the 5 traffic signs, which gives an accuracy of 80%. This compares favorably to the accuracy on the test set of ...
-
-#### 3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. (OPTIONAL: as described in the "Stand Out Suggestions" part of the rubric, visualizations can also be provided such as bar charts)
-
-The code for making predictions on my final model is located in the 11th cell of the Ipython notebook.
-
-For the first image, the model is relatively sure that this is a stop sign (probability of 0.6), and the image does contain a stop sign. The top five soft max probabilities were
-
-| Probability         	|     Prediction	        					|
-|:---------------------:|:---------------------------------------------:|
-| .60         			| Stop sign   									|
-| .20     				| U-turn 										|
-| .05					| Yield											|
-| .04	      			| Bumpy Road					 				|
-| .01				    | Slippery Road      							|
-
-
-For the second image ... 
-
-### (Optional) Visualizing the Neural Network (See Step 4 of the Ipython notebook for more details)
-#### 1. Discuss the visual output of your trained network's feature maps. What characteristics did the neural network use to make classifications?
 
 
