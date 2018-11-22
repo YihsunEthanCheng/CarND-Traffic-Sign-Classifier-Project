@@ -9,27 +9,12 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 from skimage import color, exposure, transform, util, filters
+import pandas as pd
+from matplotlib import image as mpimg
+
 
 noise = lambda span: 2*(np.random.rand()-0.5)*span
     
-def tileForShow(img):
-    mosaic = []
-    n = int(np.sqrt(len(img)))
-    row = []
-    for ii, im in enumerate(img):
-        row += [im]
-        if (ii+1)%n == 0:
-            mosaic += [np.hstack(row)]
-            row = []
-    mosaic = np.vstack(mosaic)    
-    return mosaic    
-
-def scaleForShow(img):    
-    L, H = np.min(img), np.max(img)
-    img = (img - L) / (H - L )
-    return img
-
-
 class TrafficSignData(object):
     
     def __init__(self, params, path = 'data'):
@@ -57,8 +42,14 @@ class TrafficSignData(object):
 
         # process image
         self.x_train, self.mu_train, self.sigma_train = self.processImage(train['features'])
-        self.x_valid, _ , _ = self.processImage(valid['features'], self.mu_train, self.sigma_train)
-        self.x_test,  _ , _ = self.processImage(test['features'],  self.mu_train, self.sigma_train) 
+        try:
+            self.x_valid = pickle.load( open('data/x_valid.pickle','rb'))
+        except:
+            self.x_valid, _ , _ = self.processImage(valid['features'], self.mu_train, self.sigma_train)
+        try:
+            self.x_test = pickle.load( open('data/x_test.pickle','rb'))           
+        except:
+            self.x_test,  _ , _ = self.processImage(test['features'],  self.mu_train, self.sigma_train) 
         
         # create lookup table for random sampling for training batch
         augIdx = []
@@ -71,17 +62,20 @@ class TrafficSignData(object):
         np.random.shuffle(self.augIdx)
         self.augiNext = 0 # circular starting point for the next batch 
         self.showDataStats()
-              
+        self.signNames = np.array(pd.read_csv('signnames.csv').SignName)
+      
+        
     def nextBatch(self):
         ii = self.augIdx[np.arange(self.augiNext, self.augiNext + self.BATCH_SIZE) % len(self.augIdx)]
         # move pointer 
         self.augiNext =  (self.augiNext + self.BATCH_SIZE) % len(self.augIdx)
         if self.augiNext < self.BATCH_SIZE:
             np.random.shuffle(self.augIdx)
-        if np.random.rand() < self.augment['warpFreq']: 
+        if np.random.rand() < self.warpFreq: 
             return self.warpImage(self.x_train[ii]), self.y_train[ii]
         else:
             return self.x_train[ii], self.y_train[ii]
+
 
     def showDataStats(self):
         print("Number of training examples =", len(self.y_train))
@@ -90,6 +84,7 @@ class TrafficSignData(object):
         print("Number of classes =", self.nCls )
         print("num of Training patterns", self.nPerCls)
         
+        
     def viewSample(self, nPerCls = 20):
         mosaic = []
         idx = np.vstack([np.where(self.y_train == lab_i)[0][:nPerCls] for lab_i in self.labs])
@@ -97,6 +92,7 @@ class TrafficSignData(object):
         plt.imshow(scaleForShow(mosaic))
         return mosaic
             
+    
     def processImage(self, img, mu = None, sigma = None):
         isSingleImage = False
         if len(img.shape) == 3:
@@ -114,6 +110,7 @@ class TrafficSignData(object):
         imo = (imo-mu)/sigma
         if isSingleImage:
             imo = imo[0]
+        print('image is processed')    
         return imo, mu, sigma        
 
 
@@ -136,10 +133,57 @@ class TrafficSignData(object):
             img[ii] = im1[LT[0]:(LT[0]+self.imsize[0]), LT[1]:(LT[1]+self.imsize[1]), :]
         return img    
     
-#%%
+    #  load the online testing set that is not used in the training 
+    
+    def mapIndex2TrafficSignName(self, idx):
+        return self.signNames[idx]
+    
+    
+    def normalizeImage(self, im0, ROI):
+        """
+        Normalize a novel image to be the same size of training set
+        """
+        scale = float(28.0/np.max(np.diff(ROI,axis = 0)))
+        im1 = transform.rescale(im0,scale, multichannel = True, anti_aliasing= True, mode= 'reflect')
+        center = (np.mean(ROI, axis = 0)*scale).round().astype(int)
+        LT = np.max([center - 32//2,[0,0]], axis = 0)
+        im1 = im1[LT[0]:min(LT[0]+32,im1.shape[0]), LT[1]:min(LT[1]+32,im1.shape[1]), :]
+        im1pad = np.zeros((32,32,3), dtype = im1.dtype) + np.median(im1)
+        im1pad[:im1.shape[0],:im1.shape[1]] = im1
+        return im1pad
+    
+    
+    def loadUnlabeledImage(self, sel):
+        imStack = []
+        df = pd.read_csv('data/GTSRB_Online-Test-Images/GT-online_test.test.csv', delimiter = ';')
+        for i, row in df.iterrows():
+            if i in sel:
+                im0 = mpimg.imread('data/GTSRB_Online-Test-Images/{}'.format(row.Filename))
+                ROI = np.float_(row[['Roi.Y1','Roi.X1','Roi.Y2','Roi.X2']]).reshape(2,2)
+                im1 = self.normalizeImage(im0,ROI)
+                imStack += [ im1 ]
+        return imStack
 
+# =============================================================================
+# Drawing utilities
+# =============================================================================
 
-#%%    
+def tileForShow(img):
+    mosaic = []
+    n = int(np.sqrt(len(img)))
+    row = []
+    for ii, im in enumerate(img):
+        row += [im]
+        if (ii+1)%n == 0:
+            mosaic += [np.hstack(row)]
+            row = []
+    mosaic = np.vstack(mosaic)    
+    return mosaic    
+
+def scaleForShow(img):    
+    L, H = np.min(img), np.max(img)
+    img = (img - L) / (H - L )
+    return img
         
 def warpImageShow(im, augment):
 
