@@ -11,6 +11,8 @@ import tensorflow as tf
 from tensorflow.contrib.layers import flatten
 import numpy as np
 from time import gmtime, strftime
+import matplotlib.pyplot as plt
+import pickle
 
 def doublewrap(function):
     """
@@ -30,7 +32,7 @@ def doublewrap(function):
 def define_scope(function, scope=None, *args, **kwargs):
     """
     A decorator for functions that define TensorFlow operations. The wrapped
-    function will only be executed once. Subsequent calls to it will directly
+    function will only be executed once. Subvalid_accuracysequent calls to it will directly
     return the result so that operations are added to the graph only once.
     The operations added by the function live within a tf.variable_scope(). If
     this decorator is used with arguments, they will be forwarded to the
@@ -62,43 +64,76 @@ class LeNet(object):
         self.optimize
         self.accuracy
         self.saver = tf.train.Saver()
-        #Dropout
-
-    def train(self, data):
         self.valid_accuracy = []
+
+
+    def train(self, data, resume = False):
         self.best_accuracy = 0
-        logFn = 'checkpoints/lenet5_' + strftime("%m%d%H%M%S", gmtime())
+        self.checkptFn = 'checkpoints/lenet5_' + strftime("%m%d%H%M%S", gmtime())
         with tf.Session() as sess:
-            sess.run(tf.global_variables_initializer())
+            if resume:
+                try:    
+                    self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
+                except:
+                    raise ValueError('checkpoint resume error..')
+                try:
+                    lines = open('checkpoints/checkpoint','r').readlines()
+                    self.valid_accuracy = pickle.load(open('checkpoints/' + lines[-1].split('"')[-2] + '_trainCrv.pickle', 'rb'))
+                except:
+                    self.valid_accuracy = []            
+            else:
+                sess.run(tf.global_variables_initializer())
+                self.valid_accuracy = []
+    
             best_at = 0
             for ep in range(self.EPOCHS):
-                for jj in range(len(data.augIdx) // self.BATCH_SIZE):
+                for jj in range(len(data.x_train) // self.BATCH_SIZE):
                     x_batch, y_batch = data.nextBatch()
                     sess.run(self.optimize, {self.X: x_batch, self.Y: y_batch, 
                         self.prob_keep: self.param_keep_prob, self.is_training: True})
-                self.valid_accuracy += [ 100.0*sess.run(self.accuracy, 
-                    {self.X: data.x_valid, self.Y: data.y_valid, 
-                     self.prob_keep: 1.0, self.is_training: False})]
+                        
+                    self.valid_accuracy += [ 100.0*sess.run(self.accuracy, 
+                        {self.X: data.x_valid, self.Y: data.y_valid, 
+                         self.prob_keep: 1.0, self.is_training: False})]
                 
-                # evaluate epoch validation error
-                if self.valid_accuracy[-1] > self.best_accuracy:
-                    self.saver.save(sess, logFn)
-                    self.best_accuracy = self.valid_accuracy[-1]
-                    best_at = ep
-                print('Validation accuracy @ ep#{} {:6.2f}% best @ #{} = {:6.2f}'.
-                      format(ep, self.valid_accuracy[-1],best_at,self.best_accuracy))
+                    # evaluate epoch validation error
+                    if jj%self.validate_every_n_batch == 0:
+                        if self.valid_accuracy[-1] >= self.best_accuracy:
+                            self.saver.save(sess, self.checkptFn)
+                            self.best_accuracy = self.valid_accuracy[-1]
+                            best_at = ep
+                        pickle.dump(self.valid_accuracy, open(self.checkptFn + '_trainCrv.pickle','wb'))
+                        print('Ep#{}-{} validation Rate = {:6.2f}% best @ #{} = {:6.2f}%'.
+                              format(ep,jj,self.valid_accuracy[-1],best_at,self.best_accuracy))
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
             self.test_accuracy = sess.run(self.accuracy, {self.X: data.x_test, 
                 self.Y: data.y_test, self.prob_keep: 1.0, self.is_training: False})
             print('Test accuracy : {}'.format(self.test_accuracy))
+        pickle.dump(self.valid_accuracy, open(self.checkptFn + '_trainCrv.pickle','wb'))
 
     def eval(self, x, y):
         with tf.Session() as sess:
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))
             accuracy = sess.run(self.accuracy, {self.X: x, self.Y: y, 
                 self.prob_keep: 1.0, self.is_training: False})
-            print("Accuracy = {:.3f}".format(accuracy))
+            print("Accuracy = {}".format(accuracy))
         return accuracy
+    
+    def plotTrainingCurve(self, n_train_img, dump = False):
+        if len(self.valid_accuracy) == 0:
+            lines = open('checkpoints/checkpoint','r').readlines()
+            self.checkptFn = 'checkpoints/' + lines[-1].split('"')[-2]
+            self.valid_accuracy = pickle.load(open(self.checkptFn + '_trainCrv.pickle', 'rb'))
+        fig = plt.figure()
+        fig.clf()
+        nbatch = n_train_img //self.BATCH_SIZE + 1 
+        plt.plot(np.arange(len(self.valid_accuracy[::nbatch])),self.valid_accuracy[::nbatch])
+        plt.grid()
+        plt.title('Valiation during training')
+        plt.xlabel('Epoch #')
+        plt.ylabel('Accuracy (%)')
+        if dump:
+            fig.savefig(self.checkptFn + '_training_curve')
 
     @define_scope(initializer=tf.global_variables_initializer())
     def test(self, is_training = True, a = 100):
@@ -130,9 +165,11 @@ class LeNet(object):
         self.size_c2 = ((self.size_p1 - (np.array(self.c2['ksize'])-1))/np.array(self.c2['strides'][1:3])).astype(np.int32)
         self.size_p2 = ((self.size_c2/np.array(self.c2['pool']['strides'][1:3])).astype(int)).astype(np.int32)
          
-        # Layer 3: Fully Connected. Input = 400. Output = 120.
+        # Layer 3: Fully Connected
         fc0 = flatten(conv2)
         shape = (np.prod(self.size_p2)*self.c2['n'], self.nFC1)
+        fc0 = tf.nn.dropout(fc0, self.prob_keep)
+
          # fully connected layers
         self.fc1_W = tf.Variable(tf.truncated_normal(shape = shape, mean = self.mu, stddev = self.sigma))
         self.fc1_b = tf.Variable(tf.zeros(self.nFC1))
@@ -140,12 +177,13 @@ class LeNet(object):
         fc1 = tf.nn.relu(fc1)       
         fc1 = tf.nn.dropout(fc1, self.prob_keep)
 
-        # Layer 4: Fully Connected. Input = 120. Output = 84.
+        # Layer 4: Fully Connected
         self.fc2_W  = tf.Variable(tf.truncated_normal(shape=(self.nFC1, self.nFC2), mean = self.mu, stddev = self.sigma))
         self.fc2_b  = tf.Variable(tf.zeros(self.nFC2))
         fc2 = tf.matmul(fc1, self.fc2_W) + self.fc2_b
         fc2 = tf.nn.relu(fc2)
-        
+        fc2 = tf.nn.dropout(fc2, self.prob_keep)
+
         self.fc3_W = tf.Variable(tf.truncated_normal(shape=(self.nFC2, self.nCls), mean = self.mu, stddev = self.sigma))
         self.fc3_b = tf.Variable(tf.zeros(self.nCls))
    
@@ -174,5 +212,23 @@ class LeNet(object):
 #            tf.argmax(self.label, 1), tf.argmax(self.prediction, 1))
 #        return tf.reduce_mean(tf.cast(mistakes, tf.float32))
 
+
+    def recognizeTrafficSign(self, x_unlabeled, nTop = 5):
+        """
+        predict unlabeled images
+        """           
+        with tf.Session() as sess:
+            self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
+            y_softmax = tf.nn.softmax(self.inference)
+            p = sess.run(y_softmax, {self.X: x_unlabeled, 
+                    self.prob_keep: 1.0, self.is_training: False})
+        yTop = []
+        pTop = []
+        for r in p:
+            ii = np.argsort(r)[::-1]
+            pTop += [ ii[:nTop] ]
+            yTop += [ r[ii[:nTop]]]
+            
+        return pTop, yTop      
 
 #%%
