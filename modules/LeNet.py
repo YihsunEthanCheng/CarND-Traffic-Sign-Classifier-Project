@@ -145,8 +145,8 @@ class LeNet(object):
         shape = self.c1['ksize'] + [self.imsize[2], self.c1['n']]
         self.conv1_W = tf.Variable(tf.truncated_normal(shape = shape, mean = self.mu, stddev = self.sigma))
         self.conv1_b = tf.Variable(tf.zeros(self.c1['n']))
-        conv1 = tf.nn.conv2d(self.X, self.conv1_W, strides = self.c1['strides'], padding='VALID') + self.conv1_b
-        conv1 = tf.nn.relu(conv1)
+        self.conv1 = tf.nn.conv2d(self.X, self.conv1_W, strides = self.c1['strides'], padding='VALID') + self.conv1_b
+        conv1 = tf.nn.relu(self.conv1)
 #        conv1 = tf.layers.batch_normalization(conv1, training = self.is_training)
         conv1 = tf.nn.max_pool(conv1, ksize = self.c1['pool']['ksize'], strides = self.c1['pool']['strides'], padding='VALID')
         # Conv1 ouput dimensions
@@ -157,8 +157,8 @@ class LeNet(object):
         shape =  self.c2['ksize'] + [self.c1['n'], self.c2['n']]
         self.conv2_W = tf.Variable(tf.truncated_normal(shape = shape, mean = self.mu, stddev = self.sigma))
         self.conv2_b = tf.Variable(tf.zeros(self.c2['n']))
-        conv2 = tf.nn.conv2d(conv1, self.conv2_W, strides = self.c2['strides'], padding='VALID') + self.conv2_b
-        conv2 = tf.nn.relu(conv2)
+        self.conv2 = tf.nn.conv2d(conv1, self.conv2_W, strides = self.c2['strides'], padding='VALID') + self.conv2_b
+        conv2 = tf.nn.relu(self.conv2)
 #        conv2 = tf.layers.batch_normalization(conv2, training = self.is_training)
         conv2 = tf.nn.max_pool(conv2, ksize= self.c2['pool']['ksize'], strides = self.c1['pool']['strides'], padding='VALID')
          # conv2 output dimensions
@@ -230,5 +230,14 @@ class LeNet(object):
             yTop += [ r[ii[:nTop]]]
             
         return pTop, yTop      
-
+    
+    def getKernel(self, x_):
+        with tf.Session() as sess:
+            self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
+            conv1 = sess.run(self.conv1, {self.X: x_, self.prob_keep: 1.0, self.is_training: False})
+            conv2 = sess.run(self.conv2, {self.X: x_, self.prob_keep: 1.0, self.is_training: False})
+        return np.squeeze(conv1), np.squeeze(conv2)
+    
+    
+    
 #%%
