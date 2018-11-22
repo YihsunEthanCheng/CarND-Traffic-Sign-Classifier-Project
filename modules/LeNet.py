@@ -213,7 +213,7 @@ class LeNet(object):
 #        return tf.reduce_mean(tf.cast(mistakes, tf.float32))
 
 
-    def recognizeTrafficSign(self, x_unlabeled, nTop = 5):
+    def predict(self, x_unlabeled, nTop = 5):
         """
         predict unlabeled images
         """           
