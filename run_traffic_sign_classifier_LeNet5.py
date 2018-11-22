@@ -97,21 +97,24 @@ for labi, pi in zip(labels, pTop):
 
 
 #%% Viewing featuremaps
-
-conv1, conv2 = model.getKernel(np.array([img_processed[0]]))
-#%%
-conv1 = scaleForShow(conv1)
-mosaic = []
-kk = 0
-for ii in range(int(np.sqrt(conv1.shape[-1]))):
-    row =[]
-    for jj in range(int(np.sqrt(conv1.shape[-1]))):
-        row += [conv1[:,:,kk]]
-    mosaic += [np.hstack(row)]
-mosaic = np.vstack(mosaic)
-
-plt.imshow(mosaic, cmap = 'gray')
-
+for jj in range(5):
+    conv1, conv2 = model.getKernel(np.array([img_processed[jj]]))
+    conv1 = scaleForShow(conv1)
+    mosaic = []
+    kk = 0
+    conv1 = conv1[:,:,:16]
+    for ri in range(int(np.sqrt(conv1.shape[-1]))):
+        row =[]
+        for cj in range(int(np.sqrt(conv1.shape[-1]))):
+            row += [conv1[:,:,kk]]
+        mosaic += [np.hstack(row)]
+    mosaic = np.vstack(mosaic)
+    fig, ax = plt.subplots(1,2)
+    ax[0].imshow(imgs[jj])
+    ax[1].imshow(mosaic, cmap = 'gray')
+    fig.suptitle('Feature Map of ' + Germ_signs[jj])
+    fig.savefig('examples/' + Germ_signs[jj][:-4] + '_featuremap')
+    
 #%% find training error per class
 train_accu_cls, test_accu_cls, valid_accu_cls = [], [], []
 for lab in range(data.nCls):
