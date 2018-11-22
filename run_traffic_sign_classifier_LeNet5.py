@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from modules.dataLoader import TrafficSignData, scaleForShow, tileForShow, warpImageShow
 from modules.LeNet import LeNet
 from skimage import transform
+from matplotlib import image as mpimg
 
 #import tensorflow as tf
 
@@ -68,9 +69,6 @@ model = LeNet(params)
 model.plotTrainingCurve(len(data.y_train))
 
 
-#%% choose 5 images for testing
-sel = np.random.randint(0, 12569, 5)
-
 #%% plot downloaded images for testing
 Germ_signs = [ '100_1607_small.jpg', 'Stop_sign_small.jpg', 'Arterial_small1.jpg',
     'Radfahrer_Absteigen_small.jpg', 'Do-Not-Enter_small.jpg', 'speed_30.jpg', 
@@ -97,6 +95,22 @@ for labi, pi in zip(labels, pTop):
         print('| {} | {:5.4f} |'.format(labi[ii], pi[ii]))
     print('|-----------|---------------|')
 
+
+#%% Viewing featuremaps
+
+conv1, conv2 = model.getKernel(np.array([img_processed[0]]))
+#%%
+conv1 = scaleForShow(conv1)
+mosaic = []
+kk = 0
+for ii in range(int(np.sqrt(conv1.shape[-1]))):
+    row =[]
+    for jj in range(int(np.sqrt(conv1.shape[-1]))):
+        row += [conv1[:,:,kk]]
+    mosaic += [np.hstack(row)]
+mosaic = np.vstack(mosaic)
+
+plt.imshow(mosaic, cmap = 'gray')
 
 #%% find training error per class
 train_accu_cls, test_accu_cls, valid_accu_cls = [], [], []
