@@ -244,9 +244,9 @@ ___
 
 ___
 ## Summary
- * The results show that traffic signs are in similar complexity to handwritten words that LeNet-5 architecture is adqeuate to give a decent performance.
+ * The results show that traffic signs are in similar complexity as handwritten words that LeNet-5 architecture is adqeuate to give a decent performance.
  * More perturation could be used to improve the already high testing accuracy. The most notable one is projective transformation. 
- * The featuremaps by the first convolutional layer above shows simialr images suggesting that we may have allocated more than enough resouces to the layer. The dropout also distributes the weights well into every kernel.
+ * The featuremaps by the first convolutional layer above shows simialr images suggesting that we may have allocated more than enough resouces to the layer. The dropout distributes the weights well into every kernel also contribute to the similar look in the featuremap.
 
 
 
