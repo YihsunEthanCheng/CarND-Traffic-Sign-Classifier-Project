@@ -236,7 +236,7 @@ ___
   || Go straight or right | 0.0182 |
 
  * Feature map Visualization
-  * 16 of the 64 kernel outputs are dump below for two input images for visualization.
+  * 16 of the 64 kernel outputs by the first convolutional layer are dump below for two testing images.
  
   ![alt text][image23]
   ![alt text][image24]
@@ -244,6 +244,9 @@ ___
 
 ___
 ## Summary
+ * The results show that traffic signs are in similar complexity to handwritten words that LeNet-5 architecture is adqeuate to give a decent performance.
+ * More perturation could be used to improve the already high testing accuracy. The most notable one is projective transformation. 
+ * The featuremaps by the first convolutional layer above shows simialr images suggesting that we may have allocated more than enough resouces to the layer. The dropout also distributes the weights well into every kernel.
 
 
 
