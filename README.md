@@ -37,6 +37,8 @@ ___
 [image20]: ./examples/no_passing.jpg "download_6"
 [image21]: ./examples/Share-Path-1_small.jpg "download_7"
 [image22]: ./examples/Bike-Path-Ends_small.jpg "download_8"
+[image23]: ./examples/Radfahrer_Absteigen_small_featuremap.png "Feauturemap 1"
+[image24]: ./examples/Stop_sign_small_featuremap.png "featuremap 2"
 
 ___
 
@@ -59,7 +61,7 @@ ___
 
 * Samples of images from the data set
 
-  * Major variations in data set are seen in size and lighting condition as shown below
+  * Major variations in data set are seen in size and lighting condition as shown below.
 
   * ROI are annotated in a csv file
 
@@ -71,16 +73,16 @@ ___
   | ![Alt text][image5]  | Stop             |
   | ![Alt text][image6]  | Children crossing|
 
-* Uneven population from each class
-  * To avoid training favoring populated classes, a list of image index are created as a proxy to equalize the number of training for each class (with random repetitions in less populated class).
-  * Validation and testing sets are kept as-is, no equalization in testing/validation frequency per class
+* Uneven population
+  * Number of training samples are found to be uneven in the following plot. Without equalizing the number of training samples, the neural networks would be trained to weight on populated classes. To make all classes equal weighted during training, each class is made to appear in the same frequency in each training epoch. This normalization is done through a "sampling pool" (lookup table) of image indices, in which some images are repeated multiple times to appear in the random drawings.
+  * Validation and testing sets are kept as-is, no equalization in testing/validation frequency per class.
 
     ![example #1][image1]
 
 ---
 ## Image Processing Pipeline
 
-This image processing module resides in the class "[TrafficSignData](./modules/dataLoader.py)" located in the modules folder. The module consists of three components to process each raw images.
+This image processing module resides in the "[TrafficSignData](./modules/dataLoader.py)" class. The module consists of three components to process each raw images.
 
 * **Size normalization**
 
@@ -88,17 +90,16 @@ This image processing module resides in the class "[TrafficSignData](./modules/d
 
 * **Lighting equalization**
 
-  * RGB to HLS scolor space conversion
-  * L-Channel equalization
+  * RGB to HLS color space conversion.
+  * Histogram equalization on L-Channel.
   * HLS to RGB conversion
 
-* **Intensity noramalization**
-  * Mean and standard deviation of the training set are computed and stored as the parameters.
-  * All processed training/testing/validation images are normalized to be Normal distribution w.r.t. the training set. 
+* **Intensity normalization**
+  * Mean and standard deviation of the training set are computed and stored as parameters to normalize validation and testing sets. The normalization could be performed within a pool of data. But here I am assuming once the training is done, the module is queried one image a time and the parameters from training set will be our best prior information.    
   * This step normalizes all image to be ready for neural net training.
 
 * **Results** 
-  * As shown below, the dark images are now *normalized* to look simiar to one another.
+  * As shown below, the dark images are now *normalized* to look similar to one another in lighting.
 
 | After Size Normalization | After Lighting equalization |
 | :-------------------:|:-----------------:|
@@ -106,23 +107,23 @@ This image processing module resides in the class "[TrafficSignData](./modules/d
 
 ___
 ## Data Augmentation
- Data augmentation is a stochastic step performed prior to each batch of training. Depending on the parameter (75% of the time), each batch of training images are injected with designed perturbation to create synthesized variations to the training set which promotes robustness. As the examples shown below, the augmentation module does the following steps to manufacture different looks of the same sign for the neural net.
+ Data augmentation is a stochastic step performed prior to each batch of training. Depending on the parameter (i.e.,75% of the time), each batch of training images are injected with the designed perturbations to create variations to the training set. As the examples shown below, the augmentation module does the following steps to manufacture different looks of the same image for the neural net.
 
 * **Scaling (0.88~0.12)** 
-   * The raw image is magnified/shrink within a small range such that the majority of ROI wills tay within the default image size 32x32.
+   * The raw image is magnified/shrunk within a small range such that the majority of ROI stays within the default image size 32x32.
 * **Padding (32x32 -> 38x38)**
-   * The image is padded by 3 pixels each side to provide wiggle room for expanded information due to scaling and rotation.
-   * The padding size is selected by the range of translation, which moves the center of an image.
+   * The image is padded by 3 pixels each side to provide wiggle room for holding additional information from interpolation due to scaling and rotation.
+   * The padding size is dictated by the range of translation, which moves the center of an image.
 * **Rotation (-15~15 degree)**
    * The image is rotated within a small range to angles for the robustness to rotation variations.
 * **Gaussian Blur (0~1.25)** 
    * A random size Gaussian kernel in the specified range is used to blur the image.
 * **White Gaussian Noise (sigma = 0.08)**
-   * A random white Gaussian noise is injected to the image in all color channels and resulting in random color speckles dropped on the images.
+   * A random white Gaussian noise is injected to the image in all color channels.
 * **Translation (-3~3 pixels)**
-   * A uniform random translation shifts the center of the image for the next stage.
+   * A uniform random translation shifts the center of the image.
 * **Cropping** 
-   * The final step crops the image back to the default input size at 32x32. Due to the padding, the cropping will be guranteed to match the default neural net input size.
+   * The final step crops the image back to the default input size at 32x32. Due to the padding step above, the cropping is guaranteed to yield the same default neural net input size.
 
 
 |Example #1 | Example#2 |
@@ -152,14 +153,13 @@ ___
 
 ___
 ## Training 
-* Training progressed is monitored by validation accuracy as show below. The weights are saved into and overwrote the same checkpoint filename everytime the validation makes a new high. According to plot, the net is very well trainined at around 300 epochs.
+* Training progression is monitored by validation accuracy as show below. The weights are saved in the "checkpoints" folder every time the validation makes a new high. According to the plot, the net is very well trained within the selected number of training epochs.
 
     ![Alt text][image11]
 
 * Recognition accuracy
-   * The high training accuracy across all class suggests that the current design have been fully trained. Not much to gain should training continue.
 
-  |  Data Set | Overall Weigthed Accuracy |
+  |  Data Set | Overall Weighted Accuracy |
   |:--------------:|:-----------------:|
   | Training set   | 0.9990804328867483 |
   | Validation set | 0.9886621236801147 |
@@ -170,17 +170,17 @@ ___
 
     ![Alt text][image12]
 
-  * A quick check on plot below shows that the poor accuracy are likely related to poor repreesentation of the training set in those classes.
+  * A quick check on correlation with data population shows that the poor accuracy are likely related to the number of variations in the training set, which is correlated to the sample size.
    
     ![Alt text][image13]
 
-  * Those classes performed poorly are for sure having fewer training data. But those mall classes are not necessarily perform poorly. This suggests the augmentation scheme may have missing some perturbation models to cover the different data variation in the test set.
+  * According to the correlation plot above, classes with low recognition rate are associated with lowest number of training data while some small classes are showing high recognition accuracy. This suggests that the testing set have some novelty that our augmentation scheme is deficient to counter with.
 ___
 ## Testing on novel data
 
-  * Gernman traffic sign images are found on [German Bicycle Laws website](http://bicyclegermany.com/german_bicycle_laws.html) from search engines.
+  * To Test the training, German traffic sign images are found on [German Bicycle Laws website](http://bicyclegermany.com/german_bicycle_laws.html).
 
-  * Below are recognition results for the 7 signs belonged to the list of training data with all of them getting recognized correctly.
+  * Below are recognition results for the 7 signs belonged to the list of training data with all but one getting recognized as top-1 candidate. The only miss (general caution) is recognized within top-2 candidate.
 
   | Known Signs|Top 5 Predictions |probability	|
   |:----------:|-------------|:--------------:|
@@ -220,7 +220,7 @@ ___
   || No vehicles | 0.0000 |
   || Speed limit (60km/h) | 0.0000 |
 
- * Below are 2 signs that were not seen in the data sets for training. The top predictions below are mostly in the same category of signs with round shape and blue color.
+ * Below are 2 signs that were not seen in the data sets for training. The top predictions below are mostly in the same category with round shape and blue color.
 
   | Unknown Signs | Top 5 Predictions |  probability	|
   |:-----------:|---------------|---------------------|
@@ -234,6 +234,13 @@ ___
   || Turn right ahead | 0.0622 |
   || Roundabout mandatory | 0.0454 |
   || Go straight or right | 0.0182 |
+
+ * Feature map Visualization
+  * 16 of the 64 kernel outputs are dump below for two input images for visualization.
+ 
+  ![alt text][image23]
+  ![alt text][image24]
+
 
 ___
 ## Summary
