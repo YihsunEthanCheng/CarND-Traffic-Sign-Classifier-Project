@@ -65,7 +65,7 @@ params = {
 
 data = TrafficSignData(params)
 model = LeNet(params)
-#model.train(data)
+model.train(data) # training the model, commented this line run the classifier with the trained weight
 model.plotTrainingCurve(len(data.y_train))
 
 
