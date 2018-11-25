@@ -4,6 +4,7 @@ ___
 
 ## Outlines ##
 
+* How to run this project
 * Dataset overview
 * Image processing pipeline
 * Data augmentation pipeline
@@ -41,7 +42,11 @@ ___
 [image24]: ./examples/Stop_sign_small_featuremap.png "featuremap 2"
 
 ___
+## How to run this project
+The project can be executed by running the "run_traffic_sign_classifier_LeNet5.py" including a lengthy training. You may turn off the training and run the classifier with the line of code below commented out.
 
+   Line # 68    model.train(data)
+___
 ## Dataset overview
 
 * Dataset source: [German Traffic Sign Dataset](http://benchmark.ini.rub.de/?section=gtsrb&subsection=dataset)
