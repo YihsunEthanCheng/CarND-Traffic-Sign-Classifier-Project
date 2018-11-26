@@ -98,7 +98,7 @@ for labi, pi in zip(labels, pTop):
 
 #%% Viewing featuremaps
 for jj in range(5):
-    conv1, conv2 = model.getKernel(np.array([img_processed[jj]]))
+    conv1, conv2 = model.dumpFeatureMap(np.array([img_processed[jj]]))
     conv1 = scaleForShow(conv1)
     mosaic = []
     kk = 0
