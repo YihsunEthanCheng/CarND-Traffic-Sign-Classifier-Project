@@ -231,7 +231,7 @@ class LeNet(object):
             
         return pTop, yTop      
     
-    def getKernel(self, x_):
+    def dumpFeatureMap(self, x_):
         with tf.Session() as sess:
             self.saver.restore(sess, tf.train.latest_checkpoint('checkpoints'))        
             conv1 = sess.run(self.conv1, {self.X: x_, self.prob_keep: 1.0, self.is_training: False})
