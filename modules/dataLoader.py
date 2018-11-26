@@ -201,7 +201,7 @@ def warpImageShow(im, augment):
     ax[i].imshow(scaleForShow(im1))
     ax[i].set_title('{}. Scaled {:3.2f}X'.format(i, scale))
     i+=1
-    # padding to get smae size
+    # padding to get same size
     pw = (np.array(im.shape[:2]) + augment['translate']*2 - np.array(im1.shape[:2])+1)//2
     im2 = util.pad(im1,(tuple([pw[0]]*2), tuple([pw[1]]*2), (0,0)), mode = 'constant', constant_values = 0)
     ax[i].imshow(scaleForShow(im2))
