@@ -136,7 +136,9 @@ ___
 | ![Alt text][image9] | ![Alt text][image10] |
 ___
 ## Neural network model
-* LeNet-5 is selected for this task with the following specifications. The implementation is encapsulated in the class [LeNet](./modules/Lenet.py).
+* Why Lenet-5 
+   * LeNet-5 is a well known model invented by Yann LeCun in the 90s fpr handwritten digit recognition. The traffic signs are simple graphics with mostly low freuency image contents in similar complexity to handwritten digits.  If equipped with  adqeuate numbers of kernels in the convolutional layers, I beleive LeNet-5 is more than capable of recognizing traffic signs with the benefit of fast training and simple architechture.
+* LeNet-5 for this task is implemented with the following specifications. The implementation is encapsulated in the class [LeNet](./modules/Lenet.py).
 
   | Layers / Parameters   |      Descriptions	                          |
   |:---------------------:|:---------------------------------------------:|
@@ -158,11 +160,27 @@ ___
 
 ___
 ## Training 
-* Training progression is monitored by validation accuracy as show below. The weights are saved in the "checkpoints" folder every time the validation makes a new high. According to the plot, the net is very well trained within the selected number of training epochs.
-
+* Optimizer
+  * Adaptive moment estimation (Adam) is chosed as the optimizer as it is a well known adaptive learning rate scheme. It uses a running average to estimate the "flatness" approaching a minimum, thus lowers the learning rate as a response.
+  * As running average takes multiple iterations to eatimate, the learning rate is often an under estaimate than over estimate. While it may not be very fast but does decreases the learning rate in a steady fashion. 
+  * The learning rate at 0.0001 is a well documented selection for LeNet-5 model using Adam optimizer.
+* Dropouts
+  * Dropouts are purposely installed prior to each fully connected layer. Dropout is a well known regularizatio technique to avoid over training. It can be deployed at any layer but is known to be especially effective for fully connected layers. The keep rate at 0.5 purposely disconnected half of the connections which force the desired memory recall to be distributed from multiple paths.
+* Number of kenerls in convolutional layers
+  * 64 kernels in the first convolution layer is known a rule of thumb to be around 2x of the number of classes (43) while 128 kernels in the second convolutional layer is purposely selected as 2x of the number of kenerls in the previous conolutional layers. The transformation of input features from shallow to deep channels is known a key to feature extraction in Convolutional Neural Network.
+* Batch size 
+   * 512 images are selcted as the batch size, which allows us to validate the state of training in the middle of an epoch. 
+   * The selection of batch size is often meant for *batch normalization*, a technique to scale the intermediate features and enforce a layer to focus on the dense part of the statistical distribution. Hence, the faster training convergence is achieved. Unfortonetely, batch normalization seems to have little or no effect in this task, due to well input normalization asn not-so-deep architecture in this model.
+* Number of epochs
+  * Length of training is a guess work as long as the validation accurcay shows signs of fatigue in making new highs before the end of training. 
+  * Training progression is monitored by validation accuracy as show below. In old timer, overtraining is detected by the divergence between the validation and training errors.  As dropouts are heavily deployed in all fully connected layers, overtraining is unlikely to happen. Thus, this curve is only used to tell if we have under train the model with insufficient epochs.  The plot suggests a well trainged model.  
+  
     ![Alt text][image11]
+  
+* Weight storage and restoration
+   * The weights are saved in the "checkpoints" folder every time the validation accuracy makes a new high. This will guarantee the peak state of the model to be preserved for recall once the training is done.  
 
-* Recognition accuracy
+* Recognition accuracy and model performance
 
   |  Data Set | Overall Weighted Accuracy |
   |:--------------:|:-----------------:|
@@ -183,9 +201,16 @@ ___
 ___
 ## Testing on novel data
 
-  * To Test the training, German traffic sign images are found on [German Bicycle Laws website](http://bicyclegermany.com/german_bicycle_laws.html).
+ * To Test the training, German traffic sign images are found on [German Bicycle Laws website](http://bicyclegermany.com/german_bicycle_laws.html).
 
-  * Below are recognition results for the 7 signs belonged to the list of training data with all but one getting recognized as top-1 candidate. The only miss (general caution) is recognized within top-2 candidate.
+ * Novelty observed in the downloaded testing images
+   * Perspective transformation to the left (test case #2).
+   *  Connected and confuse background (test case #3, and #5) 
+   * Additional descriptive box in the lower half of image (test case #4).
+   * Watermark (test cse #6).
+   * Uneven lighting in once corner (test case #7)
+
+ * Below are recognition results for the 7 signs belonged to the list of training data with all but one getting recognized as top-1 candidate. The only miss (general caution) is recognized within top-2 candidate.
 
   | Known Signs|Top 5 Predictions |probability	|
   |:----------:|-------------|:--------------:|
@@ -248,10 +273,12 @@ ___
 
 
 ___
-## Summary
+## Takeaways on performance
  * The results show that traffic signs are in similar complexity as handwritten words that LeNet-5 architecture is adqeuate to give a decent performance.
  * More perturation could be used to improve the already high testing accuracy. The most notable one is projective transformation. 
  * The featuremaps at the first convolutional layer above shows simialr images suggesting that we may have allocated more than enough resouces to the layer. The dropout distributes the weights well into every kernel also contribute to the similar look in the featuremap.
+ * The error in the 4th image is commited due to the extention of the bottom part, which is cropped out in the given data set. This image comes from a bicycle law website focusing on biker's information. Thus, its novelty is too much for our model to overcome.  Should we have complete look of the same lower part in the training set, 100% accuracy on novel data at this image quality should be very achievable.
+ * 100% reacognition rate in the top-2 candidates and close output on the two unseen traffic signs suggest the model works well for this task and can be esily extended for more traffic signs.
 
 
 
