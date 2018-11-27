@@ -137,7 +137,7 @@ ___
 ___
 ## Neural network model
 * Why Lenet-5 
-   * LeNet-5 is a well known model invented by Yann LeCun in the 90s fpr handwritten digit recognition. The traffic signs are simple graphics with mostly low freuency image contents in similar complexity to handwritten digits.  If equipped with  adqeuate numbers of kernels in the convolutional layers, I beleive LeNet-5 is more than capable of recognizing traffic signs with the benefit of fast training and simple architechture.
+   * LeNet-5 is a well known model invented by Yann LeCun in the 90s for handwritten digit recognition. The traffic signs are simple graphics with mostly low freuency image contents in similar complexity to handwritten digits.  If equipped with  adqeuate numbers of kernels in the convolutional layers, I beleive LeNet-5 is more than capable of recognizing traffic signs with the benefit of fast training and simple architechture.
 * LeNet-5 for this task is implemented with the following specifications. The implementation is encapsulated in the class [LeNet](./modules/Lenet.py).
 
   | Layers / Parameters   |      Descriptions	                          |
@@ -161,24 +161,24 @@ ___
 ___
 ## Training 
 * Optimizer
-  * Adaptive moment estimation (Adam) is chosed as the optimizer as it is a well known adaptive learning rate scheme. It uses a running average to estimate the "flatness" approaching a minimum, thus lowers the learning rate as a response.
-  * As running average takes multiple iterations to eatimate, the learning rate is often an under estaimate than over estimate. While it may not be very fast but does decreases the learning rate in a steady fashion. 
+  * Adaptive moment estimation (Adam) is chose as the optimizer as it is a well known adaptive learning rate scheme. It uses a running average to estimate the "flatness" in the cost function while approaching a minimum, thus lowers the learning rate as a necessary adaptation to avoid hopping around a minimum.
+  * As running average takes multiple iterations to eatimate, the learning rate is often an under estaimate than over estimate. While it may be slow to adjust the learning rate but does it in a very steady fashion. 
   * The learning rate at 0.0001 is a well documented selection for LeNet-5 model using Adam optimizer.
 * Dropouts
-  * Dropouts are purposely installed prior to each fully connected layer. Dropout is a well known regularizatio technique to avoid over training. It can be deployed at any layer but is known to be especially effective for fully connected layers. The keep rate at 0.5 purposely disconnected half of the connections which force the desired memory recall to be distributed from multiple paths.
+  * Dropouts are purposely installed prior to each fully connected layer. Dropout is a well known regularization technique to avoid over training. It can be deployed at any layer but is known to be especially effective for fully connected layers. The keep rate at 0.5 purposely disconnected half of the connections during and forces the desired memory recall to be distributed from multiple paths to achieve robustness.
 * Number of kenerls in convolutional layers
-  * 64 kernels in the first convolution layer is known a rule of thumb to be around 2x of the number of classes (43) while 128 kernels in the second convolutional layer is purposely selected as 2x of the number of kenerls in the previous conolutional layers. The transformation of input features from shallow to deep channels is known a key to feature extraction in Convolutional Neural Network.
+  * 64 kernels in the first convolution layer is selected to be near 2x of the number of classes (43) while 128 kernels in the second convolutional layer is purposely selected as 2x of the number of kenerls in the previous conolutional layers. The transformation of input features from shallow to deep channels is known a key to successful feature extraction in Convolutional Neural Network.
 * Batch size 
-   * 512 images are selcted as the batch size, which allows us to validate the state of training in the middle of an epoch. 
-   * The selection of batch size is often meant for *batch normalization*, a technique to scale the intermediate features and enforce a layer to focus on the dense part of the statistical distribution. Hence, the faster training convergence is achieved. Unfortonetely, batch normalization seems to have little or no effect in this task, due to well input normalization asn not-so-deep architecture in this model.
+   * 512 images are selected as the batch size, which allows us to validate the state of training in the middle of an epoch. 
+   * The selection of batch size is often meant for *batch normalization*, a technique to scale the intermediate features and enforce a layer to focus on the dense section of the data distribution, thus, achieves faster training convergence. Unfortonetely, batch normalization seems to have little or no effect in this task, due to well input normalization as not-so-deep architecture in this model.
 * Number of epochs
-  * Length of training is a guess work as long as the validation accurcay shows signs of fatigue in making new highs before the end of training. 
-  * Training progression is monitored by validation accuracy as show below. In old timer, overtraining is detected by the divergence between the validation and training errors.  As dropouts are heavily deployed in all fully connected layers, overtraining is unlikely to happen. Thus, this curve is only used to tell if we have under train the model with insufficient epochs.  The plot suggests a well trainged model.  
+  * Length of training is a guess work as long as the validation accurcay shows ample signs of fatigue in making new highs before the end of training. 
+  * Training progression is monitored by validation accuracy as show below. In the old time before regularaization is introduced, overtraining is detected by the divergence between the validation and training errors.  As dropouts are heavily deployed in all fully connected layers in this model, overtraining is unlikely to happen. Thus, this curve is only used to tell if we have under train the model with insufficient epochs.  The plot confirms a well trained model.  
   
     ![Alt text][image11]
   
 * Weight storage and restoration
-   * The weights are saved in the "checkpoints" folder every time the validation accuracy makes a new high. This will guarantee the peak state of the model to be preserved for recall once the training is done.  
+   * The weights are saved in the "checkpoints" folder every time the validation accuracy makes a new high. This ensures the peak state of the model to be preserved for memory recalls once the training is done.  
 
 * Recognition accuracy and model performance
 
@@ -205,7 +205,7 @@ ___
 
  * Novelty observed in the downloaded testing images
    * Perspective transformation to the left (test case #2).
-   *  Connected and confuse background (test case #3, and #5) 
+   * Connected and confuse background (test case #3, and #5) 
    * Additional descriptive box in the lower half of image (test case #4).
    * Watermark (test cse #6).
    * Uneven lighting in once corner (test case #7)
